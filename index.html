@@ -139,12 +139,12 @@ body.mobile #visited-counter .vc-label{font-size:8px}
 
 body.mobile #timeline{display:none}
 
-body.mobile #controls-hint{font-size:9px;padding:6px 14px;bottom:8px}
+body.mobile #controls-hint{font-size:9px;padding:6px 14px;bottom:150px}
 
 body.mobile #castle-prompt .cp-text{font-size:18px}
 body.mobile #castle-prompt .cp-sub{font-size:11px}
 
-body.mobile #complete-btn{bottom:40vh;font-size:11px;padding:10px 28px}
+body.mobile #complete-btn{bottom:38vh;font-size:11px;padding:10px 28px;left:50%;transform:translateX(-50%)}
 
 body.mobile #comp-box{padding:24px 20px}
 body.mobile #comp-box h2{font-size:22px}
@@ -184,7 +184,7 @@ body.mobile #welcome-box .small{font-size:10px}
   <div class="cp-sub">The final discovery awaits within</div>
 </div>
 <button id="complete-btn">Complete the Journey</button>
-<div id="minimap"><canvas id="mmc" width="144" height="144"></canvas></div>
+<div id="minimap"><canvas id="mmc" width="144" height="144" style="width:100%;height:100%"></canvas></div>
 <div id="visited-counter">
   <div class="vc-label">Discovered</div>
   <div class="vc-num"><span id="vc-count">0</span> / 8</div>
@@ -211,7 +211,7 @@ body.mobile #welcome-box .small{font-size:10px}
     <div class="comp-contact">
       <a href="https://www.linkedin.com/in/luigi-negro-77366b205/" target="_blank" class="comp-link primary">Connect on LinkedIn</a>
       <div class="comp-email-row">
-        <a href="mailto:luigi.negro98@gmail.com" class="comp-link">luigi.negro98@gmail.com</a>
+        <a href="mailto:luigi.negro98@gmail.com" class="comp-link">luigi.negro98&#64;gmail.com</a>
         <button class="comp-copy" id="copy-email" title="Copy email">⎘</button>
       </div>
     </div>
@@ -267,9 +267,12 @@ if(isMobile){
   const jZone=document.getElementById('joystick-zone');
   let jTouch=null;
 
+  let jTouchId=null;
+
   jZone.addEventListener('touchstart',e=>{
     e.preventDefault();
-    const t=e.touches[0];
+    const t=e.changedTouches[0];
+    jTouchId=t.identifier;
     const rect=jBase.getBoundingClientRect();
     jTouch={cx:rect.left+rect.width/2,cy:rect.top+rect.height/2};
   },{passive:false});
@@ -277,54 +280,76 @@ if(isMobile){
   jZone.addEventListener('touchmove',e=>{
     e.preventDefault();
     if(!jTouch)return;
-    const t=e.touches[0];
-    let dx=t.clientX-jTouch.cx, dy=t.clientY-jTouch.cy;
-    const maxR=50;
-    const dist=Math.sqrt(dx*dx+dy*dy);
-    if(dist>maxR){dx=dx/dist*maxR;dy=dy/dist*maxR;}
-    jThumb.style.transform=`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px))`;
-    // Update state
-    if(typeof S!=='undefined'){
-      S.joystickActive=true;
-      S.joystickDir.x=dx/maxR;
-      S.joystickDir.y=-dy/maxR;
+    for(let i=0;i<e.changedTouches.length;i++){
+      const t=e.changedTouches[i];
+      if(t.identifier!==jTouchId)continue;
+      let dx=t.clientX-jTouch.cx, dy=t.clientY-jTouch.cy;
+      const maxR=50;
+      const dist=Math.sqrt(dx*dx+dy*dy);
+      if(dist>maxR){dx=dx/dist*maxR;dy=dy/dist*maxR;}
+      jThumb.style.transform=`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px))`;
+      if(typeof S!=='undefined'){
+        S.joystickActive=true;
+        S.joystickDir.x=dx/maxR;
+        S.joystickDir.y=-dy/maxR;
+      }
     }
   },{passive:false});
 
   jZone.addEventListener('touchend',e=>{
     e.preventDefault();
-    jTouch=null;
-    jThumb.style.transform='translate(-50%,-50%)';
-    if(typeof S!=='undefined'){
-      S.joystickActive=false;
-      S.joystickDir.x=0;
-      S.joystickDir.y=0;
+    for(let i=0;i<e.changedTouches.length;i++){
+      if(e.changedTouches[i].identifier===jTouchId){
+        jTouchId=null;
+        jTouch=null;
+        jThumb.style.transform='translate(-50%,-50%)';
+        if(typeof S!=='undefined'){
+          S.joystickActive=false;
+          S.joystickDir.x=0;
+          S.joystickDir.y=0;
+        }
+      }
     }
   },{passive:false});
 
-  // Look zone touch
-  const lZone=document.getElementById('look-zone');
-  let lookTouch=null;
+  // Look zone touch — use touch identifier for multitouch
+  let lookTouchId=null;
+  let lookPrev=null;
+
   document.addEventListener('touchstart',e=>{
-    if(e.target===jZone||jZone.contains(e.target))return;
-    if(e.target===lZone||lZone.contains(e.target)||e.touches[0].clientX>window.innerWidth/2){
-      lookTouch={x:e.touches[0].clientX,y:e.touches[0].clientY};
+    for(let i=0;i<e.changedTouches.length;i++){
+      const t=e.changedTouches[i];
+      // Skip if touch is on joystick
+      if(jZone.contains(t.target))continue;
+      // Skip if touch is on UI buttons
+      if(t.target.closest('#welcome,#completion,#rotate-overlay,#complete-btn,#comp-dismiss,#copy-email'))continue;
+      // This is a look touch
+      if(lookTouchId===null){
+        lookTouchId=t.identifier;
+        lookPrev={x:t.clientX,y:t.clientY};
+      }
     }
   },{passive:true});
+
   document.addEventListener('touchmove',e=>{
-    if(!lookTouch)return;
-    if(e.target===jZone||jZone.contains(e.target))return;
-    const t=e.touches[0];
-    if(typeof S!=='undefined'){
-      S.yaw-=(t.clientX-lookTouch.x)*0.004;
-      S.pitch-=(t.clientY-lookTouch.y)*0.004;
-      S.pitch=Math.max(-Math.PI/3,Math.min(Math.PI/3,S.pitch));
+    for(let i=0;i<e.changedTouches.length;i++){
+      const t=e.changedTouches[i];
+      if(t.identifier===lookTouchId&&lookPrev&&typeof S!=='undefined'){
+        S.yaw-=(t.clientX-lookPrev.x)*0.004;
+        S.pitch-=(t.clientY-lookPrev.y)*0.004;
+        S.pitch=Math.max(-Math.PI/3,Math.min(Math.PI/3,S.pitch));
+        lookPrev={x:t.clientX,y:t.clientY};
+      }
     }
-    lookTouch={x:t.clientX,y:t.clientY};
   },{passive:true});
+
   document.addEventListener('touchend',e=>{
-    if(e.target===jZone||jZone.contains(e.target))return;
-    lookTouch=null;
+    for(let i=0;i<e.changedTouches.length;i++){
+      if(e.changedTouches[i].identifier===lookTouchId){
+        lookTouchId=null;
+        lookPrev=null;
+      }
+    }
   },{passive:true});
 }
 /*
@@ -739,7 +764,12 @@ function init(){
   // ─── Minimap ───
   function drawMinimap(){
     const cv=document.getElementById('mmc'),ctx=cv.getContext('2d');
-    const w=144,h=144;ctx.clearRect(0,0,w,h);
+    // Adapt canvas size to actual container
+    const container=cv.parentElement;
+    const cw=container.clientWidth-16,ch=container.clientHeight-16; // account for padding
+    if(cv.width!==cw||cv.height!==ch){cv.width=cw;cv.height=ch;}
+    const w=cv.width,h=cv.height;
+    ctx.clearRect(0,0,w,h);
     const mapX=x=>((x+55)/110)*w, mapZ=z=>((55-z)/110)*h;
     // Castle
     ctx.fillStyle='rgba(218,165,32,0.2)';
@@ -814,8 +844,8 @@ function init(){
           S.yaw=Math.PI;S.pitch=0;
           camera.rotation.y=S.yaw;camera.rotation.x=S.pitch;
           introOverlay.remove();introText.remove();
-          document.getElementById('click-prompt').classList.add('show');
-          document.getElementById('timeline').classList.add('show');
+          if(!isMobile) document.getElementById('click-prompt').classList.add('show');
+          if(!isMobile) document.getElementById('timeline').classList.add('show');
         }
       }
       // Still render during intro but skip player controls
@@ -838,11 +868,6 @@ function init(){
       return;
     }
 
-    // Click prompt
-    if(!promptShown&&!document.pointerLockElement){
-      document.getElementById('click-prompt').classList.add('show');
-    }
-
     const speed=8,sprint=S.keys['shift']?2.5:1;
     const dir=new THREE.Vector3();
     if(S.keys['w']||S.keys['arrowup'])dir.z-=1;
@@ -850,6 +875,15 @@ function init(){
     if(S.keys['a']||S.keys['arrowleft'])dir.x-=1;
     if(S.keys['d']||S.keys['arrowright'])dir.x+=1;
     if(S.joystickActive){dir.x+=S.joystickDir.x;dir.z-=S.joystickDir.y;}
+
+    // Click prompt — hide after first movement or pointer lock
+    if(!promptShown){
+      if(dir.length()>0||document.pointerLockElement){
+        promptShown=true;
+        document.getElementById('click-prompt').classList.remove('show');
+      }
+    }
+
     if(dir.length()>0)dir.normalize();
     dir.applyEuler(new THREE.Euler(0,S.yaw,0,'YXZ'));
     camera.position.x+=dir.x*speed*sprint*dt;
@@ -926,6 +960,9 @@ function init(){
         S.completeButtonShown=false;
         document.getElementById('complete-btn').classList.remove('show');
       }
+      if(nexusDist>=10&&S.activeMonument===AI_NEXUS.id&&!S.completionShown){
+        S.activeMonument=null;hideCard();
+      }
     }
 
     // Labels
@@ -968,9 +1005,8 @@ function init(){
           else if(visitedMonuments.has(m.id)) dot.classList.add('visited');
         }
       });
-      if(cardTimeout)clearTimeout(cardTimeout);
-    }else if(S.activeMonument){
-      // Hide card immediately when no monument is close
+    }else if(!closest&&S.activeMonument&&S.activeMonument!==AI_NEXUS.id){
+      // Hide card only when player has walked away from ALL monuments
       S.activeMonument=null;hideCard();
       MONUMENTS.forEach(m=>{const dot=document.getElementById('tl-'+m.id);if(dot)dot.classList.remove('active');});
     }
@@ -1050,7 +1086,8 @@ function showCard(data){
   html+=`<div class="divider"></div>`;
   data.details.forEach(d=>{html+=`<div class="detail">${highlightMetrics(d)}</div>`;});
   card.innerHTML=html;
-  card.style.display='block';card.style.animation='none';card.offsetHeight;card.style.animation='fadeSlideIn 0.35s ease-out';
+  card.style.display='block';card.style.animation='none';card.offsetHeight;
+  card.style.animation=isMobile?'mobileCardIn 0.3s ease-out':'fadeSlideIn 0.35s ease-out';
 }
 function hideCard(){document.getElementById('info-card').style.display='none';}
 
