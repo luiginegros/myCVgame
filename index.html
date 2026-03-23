@@ -103,14 +103,79 @@ body{overflow:hidden;background:#2d3436;font-family:'Cormorant Garamond',Georgia
 #complete-btn{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);z-index:20;padding:14px 40px;background:linear-gradient(135deg,rgba(58,175,169,0.9),rgba(43,122,120,0.9));color:#fdf5e6;border:1px solid rgba(58,175,169,0.5);border-radius:8px;font-size:13px;font-family:'Jost',sans-serif;font-weight:500;letter-spacing:3px;text-transform:uppercase;cursor:pointer;box-shadow:0 4px 20px rgba(58,175,169,0.4);opacity:0;transition:opacity 0.8s,transform 0.2s;pointer-events:none}
 #complete-btn.show{opacity:1;pointer-events:auto}
 #complete-btn:hover{transform:translateX(-50%) scale(1.05);box-shadow:0 6px 25px rgba(58,175,169,0.6)}
+
+/* ─── Rotate overlay (mobile portrait) ─── */
+#rotate-overlay{position:fixed;inset:0;z-index:300;display:none;flex-direction:column;align-items:center;justify-content:center;background:rgba(6,6,6,0.92);backdrop-filter:blur(8px);color:#fdf5e6;text-align:center;padding:40px}
+#rotate-overlay.show{display:flex}
+#rotate-overlay .ro-icon{font-size:48px;animation:rotatePhone 2s ease-in-out infinite;display:inline-block}
+@keyframes rotatePhone{0%,100%{transform:rotate(0deg)}50%{transform:rotate(90deg)}}
+#rotate-overlay .ro-text{font-size:18px;font-weight:700;margin-top:20px;letter-spacing:1px}
+#rotate-overlay .ro-sub{font-size:13px;font-family:'Jost',sans-serif;font-weight:300;color:rgba(253,245,230,0.5);margin-top:8px}
+#rotate-overlay .ro-skip{margin-top:24px;padding:10px 28px;background:transparent;border:1px solid rgba(218,165,32,0.4);border-radius:6px;color:#fdf5e6;font-size:11px;font-family:'Jost',sans-serif;font-weight:400;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all 0.3s}
+#rotate-overlay .ro-skip:hover{background:rgba(218,165,32,0.15)}
+
+/* ─── Mobile joystick ─── */
+#joystick-zone{position:fixed;bottom:20px;left:20px;z-index:25;width:120px;height:120px;display:none;pointer-events:auto}
+#joystick-base{width:120px;height:120px;border-radius:50%;background:rgba(253,245,230,0.08);border:2px solid rgba(253,245,230,0.15);position:relative}
+#joystick-thumb{width:44px;height:44px;border-radius:50%;background:rgba(218,165,32,0.4);border:2px solid rgba(218,165,32,0.6);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);transition:none}
+#look-zone{position:fixed;bottom:20px;right:20px;z-index:25;width:80px;height:80px;display:none;pointer-events:auto;border-radius:50%;background:rgba(253,245,230,0.05);border:1px solid rgba(253,245,230,0.1)}
+#look-zone-label{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:9px;font-family:'Jost',sans-serif;color:rgba(253,245,230,0.3);letter-spacing:1px;text-transform:uppercase;pointer-events:none}
+
+/* ─── Mobile overrides ─── */
+body.mobile #info-card{position:fixed;right:0;left:0;top:auto;bottom:0;transform:none;width:100%;max-width:100%;border-radius:12px 12px 0 0;padding:16px 20px;max-height:35vh;overflow-y:auto;animation:mobileCardIn 0.3s ease-out}
+@keyframes mobileCardIn{from{transform:translateY(100%)}to{transform:translateY(0)}}
+body.mobile #info-card .name{font-size:18px}
+body.mobile #info-card .detail{font-size:11px;margin-top:3px;line-height:1.5}
+body.mobile #info-card .divider{margin:8px 0}
+
+body.mobile #header{padding:6px 12px}
+body.mobile #header h1{font-size:14px}
+body.mobile #header p{font-size:8px}
+
+body.mobile #minimap{width:100px;height:100px;top:8px;right:8px;padding:4px}
+body.mobile #visited-counter{top:116px;right:8px;width:100px;padding:6px 8px}
+body.mobile #visited-counter .vc-num{font-size:16px}
+body.mobile #visited-counter .vc-label{font-size:8px}
+
+body.mobile #timeline{display:none}
+
+body.mobile #controls-hint{font-size:9px;padding:6px 14px;bottom:8px}
+
+body.mobile #castle-prompt .cp-text{font-size:18px}
+body.mobile #castle-prompt .cp-sub{font-size:11px}
+
+body.mobile #complete-btn{bottom:40vh;font-size:11px;padding:10px 28px}
+
+body.mobile #comp-box{padding:24px 20px}
+body.mobile #comp-box h2{font-size:22px}
+body.mobile #comp-box .comp-stats{gap:12px;margin:12px 0}
+body.mobile #comp-box .comp-stat-num{font-size:20px}
+body.mobile #comp-box .comp-stat-label{font-size:8px}
+body.mobile #comp-box .comp-link{font-size:11px;padding:10px 16px}
+
+body.mobile #welcome-box{padding:24px 20px;max-width:90vw}
+body.mobile #welcome-box h2{font-size:22px}
+body.mobile #welcome-box .epi-griko,body.mobile #welcome-box .epi-en{font-size:13px}
+body.mobile #welcome-box p{font-size:12px}
+body.mobile #welcome-box .small{font-size:10px}
 </style>
 </head>
 <body>
 <div id="cv"></div>
 <div id="vignette"></div>
+<div id="rotate-overlay">
+  <span class="ro-icon">📱</span>
+  <div class="ro-text">Rotate Your Phone</div>
+  <div class="ro-sub">Landscape mode gives you the best experience</div>
+  <button class="ro-skip" id="rotate-skip">Continue in portrait</button>
+</div>
+<div id="joystick-zone">
+  <div id="joystick-base"><div id="joystick-thumb"></div></div>
+</div>
+<div id="look-zone"><span id="look-zone-label">Look</span></div>
 <div id="header"><h1>Luigi Negro</h1><p>Piazza Castello · Corigliano d'Otranto</p></div>
 <div id="controls-hint">WASD move · SHIFT sprint · Mouse look · ESC unlock</div>
-<div id="click-prompt"><span class="icon">◎</span>Click anywhere to look around</div>
+<div id="click-prompt"><span class="icon">◎</span><span id="click-prompt-text">Click anywhere to look around</span></div>
 <div id="timeline"></div>
 <div id="info-card"></div>
 <div id="castle-prompt">
@@ -171,8 +236,97 @@ body{overflow:hidden;background:#2d3436;font-family:'Cormorant Garamond',Georgia
   </div>
 </div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
+// ─── Mobile Detection & Setup ───
+const isMobile='ontouchstart' in window||navigator.maxTouchPoints>0;
+let rotateSkipped=false;
+
+if(isMobile){
+  document.body.classList.add('mobile');
+  document.getElementById('joystick-zone').style.display='block';
+  document.getElementById('look-zone').style.display='block';
+
+  // Show rotate overlay if portrait
+  function checkOrientation(){
+    if(!isMobile||rotateSkipped)return;
+    const isPortrait=window.innerHeight>window.innerWidth;
+    document.getElementById('rotate-overlay').classList.toggle('show',isPortrait);
+  }
+  window.addEventListener('resize',checkOrientation);
+  window.addEventListener('orientationchange',()=>setTimeout(checkOrientation,100));
+
+  document.getElementById('rotate-skip').addEventListener('click',()=>{
+    rotateSkipped=true;
+    document.getElementById('rotate-overlay').classList.remove('show');
+  });
+
+  // Visual joystick
+  const jBase=document.getElementById('joystick-base');
+  const jThumb=document.getElementById('joystick-thumb');
+  const jZone=document.getElementById('joystick-zone');
+  let jTouch=null;
+
+  jZone.addEventListener('touchstart',e=>{
+    e.preventDefault();
+    const t=e.touches[0];
+    const rect=jBase.getBoundingClientRect();
+    jTouch={cx:rect.left+rect.width/2,cy:rect.top+rect.height/2};
+  },{passive:false});
+
+  jZone.addEventListener('touchmove',e=>{
+    e.preventDefault();
+    if(!jTouch)return;
+    const t=e.touches[0];
+    let dx=t.clientX-jTouch.cx, dy=t.clientY-jTouch.cy;
+    const maxR=50;
+    const dist=Math.sqrt(dx*dx+dy*dy);
+    if(dist>maxR){dx=dx/dist*maxR;dy=dy/dist*maxR;}
+    jThumb.style.transform=`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px))`;
+    // Update state
+    if(typeof S!=='undefined'){
+      S.joystickActive=true;
+      S.joystickDir.x=dx/maxR;
+      S.joystickDir.y=-dy/maxR;
+    }
+  },{passive:false});
+
+  jZone.addEventListener('touchend',e=>{
+    e.preventDefault();
+    jTouch=null;
+    jThumb.style.transform='translate(-50%,-50%)';
+    if(typeof S!=='undefined'){
+      S.joystickActive=false;
+      S.joystickDir.x=0;
+      S.joystickDir.y=0;
+    }
+  },{passive:false});
+
+  // Look zone touch
+  const lZone=document.getElementById('look-zone');
+  let lookTouch=null;
+  document.addEventListener('touchstart',e=>{
+    if(e.target===jZone||jZone.contains(e.target))return;
+    if(e.target===lZone||lZone.contains(e.target)||e.touches[0].clientX>window.innerWidth/2){
+      lookTouch={x:e.touches[0].clientX,y:e.touches[0].clientY};
+    }
+  },{passive:true});
+  document.addEventListener('touchmove',e=>{
+    if(!lookTouch)return;
+    if(e.target===jZone||jZone.contains(e.target))return;
+    const t=e.touches[0];
+    if(typeof S!=='undefined'){
+      S.yaw-=(t.clientX-lookTouch.x)*0.004;
+      S.pitch-=(t.clientY-lookTouch.y)*0.004;
+      S.pitch=Math.max(-Math.PI/3,Math.min(Math.PI/3,S.pitch));
+    }
+    lookTouch={x:t.clientX,y:t.clientY};
+  },{passive:true});
+  document.addEventListener('touchend',e=>{
+    if(e.target===jZone||jZone.contains(e.target))return;
+    lookTouch=null;
+  },{passive:true});
+}
 /*
   LAYOUT based on real Piazza Castello, Corigliano d'Otranto (40.1590, 18.2569):
   - Castle is a large square with 4 round corner towers, south side of the piazza
@@ -815,12 +969,10 @@ function init(){
         }
       });
       if(cardTimeout)clearTimeout(cardTimeout);
-    }else if(!closest&&S.activeMonument){
-      if(cardTimeout)clearTimeout(cardTimeout);
-      cardTimeout=setTimeout(()=>{
-        S.activeMonument=null;hideCard();
-        MONUMENTS.forEach(m=>{const dot=document.getElementById('tl-'+m.id);if(dot)dot.classList.remove('active');});
-      },500);
+    }else if(S.activeMonument){
+      // Hide card immediately when no monument is close
+      S.activeMonument=null;hideCard();
+      MONUMENTS.forEach(m=>{const dot=document.getElementById('tl-'+m.id);if(dot)dot.classList.remove('active');});
     }
 
     // Check if all 8 street monuments discovered → unlock castle (runs every frame)
@@ -864,16 +1016,24 @@ function init(){
   window.addEventListener('keydown',e=>{S.keys[e.key.toLowerCase()]=true;});
   window.addEventListener('keyup',e=>{S.keys[e.key.toLowerCase()]=false;});
   document.addEventListener('mousemove',e=>{if(!document.pointerLockElement)return;S.yaw-=e.movementX*0.002;S.pitch-=e.movementY*0.002;S.pitch=Math.max(-Math.PI/3,Math.min(Math.PI/3,S.pitch));});
-  renderer.domElement.addEventListener('click',()=>{if(!document.pointerLockElement&&!S.completeButtonShown)renderer.domElement.requestPointerLock();});
-  document.addEventListener('pointerlockchange',()=>{
-    const locked=!!document.pointerLockElement;
-    document.getElementById('controls-hint').textContent=locked?'WASD move · SHIFT sprint · Mouse look · ESC unlock':'Click to look around · WASD to move';
-    if(locked&&!promptShown){promptShown=true;document.getElementById('click-prompt').classList.remove('show');}
-    if(!locked&&promptShown){document.getElementById('click-prompt').classList.remove('show');}
-  });
-  renderer.domElement.addEventListener('touchstart',e=>{if(e.touches.length===1){const t=e.touches[0];if(t.clientX<window.innerWidth/2){S.joystickActive=true;S.touchStart={x:t.clientX,y:t.clientY};}else S.touchStart={x:t.clientX,y:t.clientY,isLook:true};}},{passive:false});
-  renderer.domElement.addEventListener('touchmove',e=>{e.preventDefault();if(e.touches.length===1){const t=e.touches[0];if(S.joystickActive&&S.touchStart&&!S.touchStart.isLook){S.joystickDir.x=Math.max(-1,Math.min(1,(t.clientX-S.touchStart.x)/60));S.joystickDir.y=Math.max(-1,Math.min(1,-(t.clientY-S.touchStart.y)/60));}else if(S.touchStart&&S.touchStart.isLook){S.yaw-=(t.clientX-S.touchStart.x)*0.004;S.pitch-=(t.clientY-S.touchStart.y)*0.004;S.pitch=Math.max(-Math.PI/3,Math.min(Math.PI/3,S.pitch));S.touchStart={x:t.clientX,y:t.clientY,isLook:true};}}},{passive:false});
-  renderer.domElement.addEventListener('touchend',()=>{S.joystickActive=false;S.joystickDir={x:0,y:0};S.touchStart=null;});
+  if(!isMobile){
+    renderer.domElement.addEventListener('click',()=>{if(!document.pointerLockElement&&!S.completeButtonShown)renderer.domElement.requestPointerLock();});
+    document.addEventListener('pointerlockchange',()=>{
+      const locked=!!document.pointerLockElement;
+      document.getElementById('controls-hint').textContent=locked?'WASD move · SHIFT sprint · Mouse look · ESC unlock':'Click to look around · WASD to move';
+      if(locked&&!promptShown){promptShown=true;document.getElementById('click-prompt').classList.remove('show');}
+      if(!locked&&promptShown){document.getElementById('click-prompt').classList.remove('show');}
+    });
+  } else {
+    // Mobile: no pointer lock, show mobile controls hint, skip click prompt
+    document.getElementById('controls-hint').textContent='Joystick to move · Swipe right side to look';
+    promptShown=true; // skip click prompt on mobile
+  }
+  if(!isMobile){
+    renderer.domElement.addEventListener('touchstart',e=>{if(e.touches.length===1){const t=e.touches[0];if(t.clientX<window.innerWidth/2){S.joystickActive=true;S.touchStart={x:t.clientX,y:t.clientY};}else S.touchStart={x:t.clientX,y:t.clientY,isLook:true};}},{passive:false});
+    renderer.domElement.addEventListener('touchmove',e=>{e.preventDefault();if(e.touches.length===1){const t=e.touches[0];if(S.joystickActive&&S.touchStart&&!S.touchStart.isLook){S.joystickDir.x=Math.max(-1,Math.min(1,(t.clientX-S.touchStart.x)/60));S.joystickDir.y=Math.max(-1,Math.min(1,-(t.clientY-S.touchStart.y)/60));}else if(S.touchStart&&S.touchStart.isLook){S.yaw-=(t.clientX-S.touchStart.x)*0.004;S.pitch-=(t.clientY-S.touchStart.y)*0.004;S.pitch=Math.max(-Math.PI/3,Math.min(Math.PI/3,S.pitch));S.touchStart={x:t.clientX,y:t.clientY,isLook:true};}}},{passive:false});
+    renderer.domElement.addEventListener('touchend',()=>{S.joystickActive=false;S.joystickDir={x:0,y:0};S.touchStart=null;});
+  }
   window.addEventListener('resize',()=>{camera.aspect=window.innerWidth/window.innerHeight;camera.updateProjectionMatrix();renderer.setSize(window.innerWidth,window.innerHeight);});
 }
 
@@ -901,6 +1061,10 @@ document.getElementById('start-btn').addEventListener('click',()=>{
   document.getElementById('minimap').classList.add('show');
   document.getElementById('vignette').classList.add('show');
   document.getElementById('visited-counter').classList.add('show');
+  if(isMobile&&!rotateSkipped){
+    const isPortrait=window.innerHeight>window.innerWidth;
+    if(isPortrait) document.getElementById('rotate-overlay').classList.add('show');
+  }
   init();
 });
 document.getElementById('comp-dismiss').addEventListener('click',()=>{
