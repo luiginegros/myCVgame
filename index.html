@@ -184,7 +184,7 @@ body.mobile #welcome-box .small{font-size:10px}
   <div class="cp-sub">The final discovery awaits within</div>
 </div>
 <button id="complete-btn">Complete the Journey</button>
-<div id="minimap"><canvas id="mmc" width="144" height="144" style="width:100%;height:100%"></canvas></div>
+<div id="minimap"><canvas id="mmc"></canvas></div>
 <div id="visited-counter">
   <div class="vc-label">Discovered</div>
   <div class="vc-num"><span id="vc-count">0</span> / 8</div>
@@ -265,89 +265,71 @@ if(isMobile){
   const jBase=document.getElementById('joystick-base');
   const jThumb=document.getElementById('joystick-thumb');
   const jZone=document.getElementById('joystick-zone');
-  let jTouch=null;
 
-  let jTouchId=null;
-
-  jZone.addEventListener('touchstart',e=>{
-    e.preventDefault();
-    const t=e.changedTouches[0];
-    jTouchId=t.identifier;
-    const rect=jBase.getBoundingClientRect();
-    jTouch={cx:rect.left+rect.width/2,cy:rect.top+rect.height/2};
-  },{passive:false});
-
-  jZone.addEventListener('touchmove',e=>{
-    e.preventDefault();
-    if(!jTouch)return;
-    for(let i=0;i<e.changedTouches.length;i++){
-      const t=e.changedTouches[i];
-      if(t.identifier!==jTouchId)continue;
-      let dx=t.clientX-jTouch.cx, dy=t.clientY-jTouch.cy;
-      const maxR=50;
-      const dist=Math.sqrt(dx*dx+dy*dy);
-      if(dist>maxR){dx=dx/dist*maxR;dy=dy/dist*maxR;}
-      jThumb.style.transform=`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px))`;
-      if(typeof S!=='undefined'){
-        S.joystickActive=true;
-        S.joystickDir.x=dx/maxR;
-        S.joystickDir.y=-dy/maxR;
-      }
-    }
-  },{passive:false});
-
-  jZone.addEventListener('touchend',e=>{
-    e.preventDefault();
-    for(let i=0;i<e.changedTouches.length;i++){
-      if(e.changedTouches[i].identifier===jTouchId){
-        jTouchId=null;
-        jTouch=null;
-        jThumb.style.transform='translate(-50%,-50%)';
-        if(typeof S!=='undefined'){
-          S.joystickActive=false;
-          S.joystickDir.x=0;
-          S.joystickDir.y=0;
-        }
-      }
-    }
-  },{passive:false});
-
-  // Look zone touch — use touch identifier for multitouch
-  let lookTouchId=null;
-  let lookPrev=null;
+  // Unified multitouch system — track by touch ID
+  let moveTouchId=null, moveCenter=null;
+  let lookTouchId2=null, lookPrev2=null;
 
   document.addEventListener('touchstart',e=>{
     for(let i=0;i<e.changedTouches.length;i++){
       const t=e.changedTouches[i];
-      // Skip if touch is on joystick
-      if(jZone.contains(t.target))continue;
-      // Skip if touch is on UI buttons
-      if(t.target.closest('#welcome,#completion,#rotate-overlay,#complete-btn,#comp-dismiss,#copy-email'))continue;
-      // This is a look touch
-      if(lookTouchId===null){
-        lookTouchId=t.identifier;
-        lookPrev={x:t.clientX,y:t.clientY};
+      // Skip UI elements
+      if(t.target.closest('#welcome,#completion,#rotate-overlay,#complete-btn,#comp-dismiss,#copy-email,.ro-skip'))continue;
+      
+      const isLeftHalf=t.clientX<window.innerWidth*0.45;
+      
+      if(isLeftHalf&&moveTouchId===null){
+        // Left side = movement joystick
+        moveTouchId=t.identifier;
+        const rect=jBase.getBoundingClientRect();
+        moveCenter={cx:rect.left+rect.width/2,cy:rect.top+rect.height/2};
+      }else if(!isLeftHalf&&lookTouchId2===null){
+        // Right side = look
+        lookTouchId2=t.identifier;
+        lookPrev2={x:t.clientX,y:t.clientY};
       }
     }
   },{passive:true});
 
   document.addEventListener('touchmove',e=>{
+    e.preventDefault();
     for(let i=0;i<e.changedTouches.length;i++){
       const t=e.changedTouches[i];
-      if(t.identifier===lookTouchId&&lookPrev&&typeof S!=='undefined'){
-        S.yaw-=(t.clientX-lookPrev.x)*0.004;
-        S.pitch-=(t.clientY-lookPrev.y)*0.004;
+      
+      if(t.identifier===moveTouchId&&moveCenter){
+        // Joystick movement
+        let dx=t.clientX-moveCenter.cx, dy=t.clientY-moveCenter.cy;
+        const maxR=50;
+        const dist=Math.sqrt(dx*dx+dy*dy);
+        if(dist>maxR){dx=dx/dist*maxR;dy=dy/dist*maxR;}
+        jThumb.style.transform=`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px))`;
+        if(typeof S!=='undefined'){
+          S.joystickActive=true;
+          S.joystickDir.x=dx/maxR;
+          S.joystickDir.y=-dy/maxR;
+        }
+      }
+      
+      if(t.identifier===lookTouchId2&&lookPrev2&&typeof S!=='undefined'){
+        // Look rotation
+        S.yaw-=(t.clientX-lookPrev2.x)*0.004;
+        S.pitch-=(t.clientY-lookPrev2.y)*0.004;
         S.pitch=Math.max(-Math.PI/3,Math.min(Math.PI/3,S.pitch));
-        lookPrev={x:t.clientX,y:t.clientY};
+        lookPrev2={x:t.clientX,y:t.clientY};
       }
     }
-  },{passive:true});
+  },{passive:false});
 
   document.addEventListener('touchend',e=>{
     for(let i=0;i<e.changedTouches.length;i++){
-      if(e.changedTouches[i].identifier===lookTouchId){
-        lookTouchId=null;
-        lookPrev=null;
+      const id=e.changedTouches[i].identifier;
+      if(id===moveTouchId){
+        moveTouchId=null;moveCenter=null;
+        jThumb.style.transform='translate(-50%,-50%)';
+        if(typeof S!=='undefined'){S.joystickActive=false;S.joystickDir.x=0;S.joystickDir.y=0;}
+      }
+      if(id===lookTouchId2){
+        lookTouchId2=null;lookPrev2=null;
       }
     }
   },{passive:true});
@@ -762,20 +744,29 @@ function init(){
   S.yaw=0;
 
   // ─── Minimap ───
+  let mmInitialized=false;
   function drawMinimap(){
     const cv=document.getElementById('mmc'),ctx=cv.getContext('2d');
-    // Adapt canvas size to actual container
     const container=cv.parentElement;
-    const cw=container.clientWidth-16,ch=container.clientHeight-16; // account for padding
-    if(cv.width!==cw||cv.height!==ch){cv.width=cw;cv.height=ch;}
+    const displayW=container.clientWidth-16,displayH=container.clientHeight-16;
+    // Set display size and buffer size
+    if(!mmInitialized||cv.style.width!==displayW+'px'){
+      cv.style.width=displayW+'px';
+      cv.style.height=displayH+'px';
+      cv.width=displayW;
+      cv.height=displayH;
+      mmInitialized=true;
+    }
     const w=cv.width,h=cv.height;
     ctx.clearRect(0,0,w,h);
     const mapX=x=>((x+55)/110)*w, mapZ=z=>((55-z)/110)*h;
+    // Scale drawing elements based on canvas size
+    const sc=w/144; // scale factor relative to desktop 144px
     // Castle
     ctx.fillStyle='rgba(218,165,32,0.2)';
     ctx.fillRect(mapX(-10),mapZ(-15),mapX(10)-mapX(-10),mapZ(-35)-mapZ(-15));
     // Streets
-    ctx.strokeStyle='rgba(232,220,200,0.15)';ctx.lineWidth=4;
+    ctx.strokeStyle='rgba(232,220,200,0.15)';ctx.lineWidth=3*sc;
     ctx.beginPath();ctx.moveTo(mapX(0),mapZ(55));ctx.lineTo(mapX(0),mapZ(15));ctx.stroke();
     ctx.beginPath();ctx.moveTo(mapX(-42),mapZ(5));ctx.lineTo(mapX(45),mapZ(5));ctx.stroke();
     ctx.beginPath();ctx.moveTo(mapX(0),mapZ(-40));ctx.lineTo(mapX(0),mapZ(-65));ctx.stroke();
@@ -787,25 +778,25 @@ function init(){
       const visited=visitedMonuments.has(m.id);
       if(active){
         ctx.fillStyle='#ffd700';
-        ctx.beginPath();ctx.arc(mapX(m.pos[0]),mapZ(m.pos[2]),5,0,Math.PI*2);ctx.fill();
-        ctx.strokeStyle='rgba(255,215,0,0.4)';ctx.lineWidth=2;
-        ctx.beginPath();ctx.arc(mapX(m.pos[0]),mapZ(m.pos[2]),8,0,Math.PI*2);ctx.stroke();
+        ctx.beginPath();ctx.arc(mapX(m.pos[0]),mapZ(m.pos[2]),4*sc,0,Math.PI*2);ctx.fill();
+        ctx.strokeStyle='rgba(255,215,0,0.4)';ctx.lineWidth=1.5*sc;
+        ctx.beginPath();ctx.arc(mapX(m.pos[0]),mapZ(m.pos[2]),6*sc,0,Math.PI*2);ctx.stroke();
       }else if(visited){
         ctx.fillStyle='rgba(218,165,32,0.7)';
-        ctx.beginPath();ctx.arc(mapX(m.pos[0]),mapZ(m.pos[2]),4,0,Math.PI*2);ctx.fill();
+        ctx.beginPath();ctx.arc(mapX(m.pos[0]),mapZ(m.pos[2]),3*sc,0,Math.PI*2);ctx.fill();
       }else{
         ctx.fillStyle=`rgba(253,245,230,${0.25+pulseT*0.25})`;
-        ctx.beginPath();ctx.arc(mapX(m.pos[0]),mapZ(m.pos[2]),3+pulseT,0,Math.PI*2);ctx.fill();
+        ctx.beginPath();ctx.arc(mapX(m.pos[0]),mapZ(m.pos[2]),(2.5+pulseT)*sc,0,Math.PI*2);ctx.fill();
       }
     });
     // Player
     ctx.fillStyle='#3aafa9';
-    ctx.beginPath();ctx.arc(mapX(camera.position.x),mapZ(camera.position.z),5,0,Math.PI*2);ctx.fill();
-    ctx.strokeStyle='rgba(232,220,200,0.3)';ctx.lineWidth=1;
-    ctx.beginPath();ctx.arc(mapX(camera.position.x),mapZ(camera.position.z),9,0,Math.PI*2);ctx.stroke();
-    // Direction indicator: In Three.js with YXZ, forward is (−sin(yaw), 0, −cos(yaw))
+    ctx.beginPath();ctx.arc(mapX(camera.position.x),mapZ(camera.position.z),4*sc,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='rgba(232,220,200,0.3)';ctx.lineWidth=1*sc;
+    ctx.beginPath();ctx.arc(mapX(camera.position.x),mapZ(camera.position.z),7*sc,0,Math.PI*2);ctx.stroke();
+    // Direction indicator
     const fwdX=-Math.sin(S.yaw)*8, fwdZ=-Math.cos(S.yaw)*8;
-    ctx.strokeStyle='rgba(232,220,200,0.6)';ctx.lineWidth=2;
+    ctx.strokeStyle='rgba(232,220,200,0.6)';ctx.lineWidth=1.5*sc;
     ctx.beginPath();ctx.moveTo(mapX(camera.position.x),mapZ(camera.position.z));ctx.lineTo(mapX(camera.position.x+fwdX),mapZ(camera.position.z+fwdZ));ctx.stroke();
   }
 
