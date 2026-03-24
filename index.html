@@ -8,7 +8,7 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{overflow:hidden;background:#2d3436;font-family:'Cormorant Garamond',Georgia,serif}
-#cv{width:100vw;height:100vh;position:absolute;top:0;left:0}
+#cv{width:100vw;height:100vh;position:absolute;top:0;left:0;touch-action:none}
 @keyframes fadeSlideIn{from{opacity:0;transform:translateY(-50%) translateX(20px)}to{opacity:1;transform:translateY(-50%) translateX(0)}}
 
 #header{position:fixed;top:16px;left:16px;z-index:10;background:rgba(45,52,54,0.78);backdrop-filter:blur(10px);padding:10px 18px;border-radius:8px;color:#fdf5e6;border-left:3px solid #daa520;opacity:0;transition:opacity 0.8s}
@@ -122,7 +122,7 @@ body{overflow:hidden;background:#2d3436;font-family:'Cormorant Garamond',Georgia
 #look-zone-label{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:9px;font-family:'Jost',sans-serif;color:rgba(253,245,230,0.3);letter-spacing:1px;text-transform:uppercase;pointer-events:none}
 
 /* ─── Mobile overrides ─── */
-body.mobile #info-card{position:fixed;right:0;left:0;top:auto;bottom:0;transform:none;width:100vw;max-width:100vw;border-radius:14px 14px 0 0;padding:10px 14px 14px;max-height:28vh;overflow-y:auto;z-index:30;box-shadow:0 -4px 20px rgba(0,0,0,0.5);-webkit-overflow-scrolling:touch}
+body.mobile #info-card{position:fixed;right:0;left:0;top:auto;bottom:0;transform:none;width:100vw;max-width:100vw;border-radius:14px 14px 0 0;padding:10px 14px 14px;max-height:28vh;overflow-y:auto;z-index:30;box-shadow:0 -4px 20px rgba(0,0,0,0.5);-webkit-overflow-scrolling:touch;touch-action:pan-y}
 body.mobile #info-card::-webkit-scrollbar{width:3px}
 body.mobile #info-card::-webkit-scrollbar-track{background:transparent}
 body.mobile #info-card::-webkit-scrollbar-thumb{background:rgba(218,165,32,0.3);border-radius:3px}
@@ -298,23 +298,14 @@ if(isMobile){
     }
   },{passive:true});
 
+  // Prevent page scroll only on the 3D canvas
+  document.getElementById('cv').addEventListener('touchmove',e=>{e.preventDefault();},{passive:false});
+
   document.addEventListener('touchmove',e=>{
-    // Check if any changed touch is on the info card — if so, let it scroll natively
-    let onCard=false;
-    for(let i=0;i<e.changedTouches.length;i++){
-      if(e.changedTouches[i].identifier!==moveTouchId&&e.changedTouches[i].identifier!==lookTouchId2){
-        // This touch isn't tracked as joystick or look — might be card scroll
-        const el=document.elementFromPoint(e.changedTouches[i].clientX,e.changedTouches[i].clientY);
-        if(el&&el.closest('#info-card')){onCard=true;}
-      }
-    }
-    if(!onCard) e.preventDefault();
-    
     for(let i=0;i<e.changedTouches.length;i++){
       const t=e.changedTouches[i];
       
       if(t.identifier===moveTouchId&&moveCenter){
-        // Joystick movement
         let dx=t.clientX-moveCenter.cx, dy=t.clientY-moveCenter.cy;
         const maxR=50;
         const dist=Math.sqrt(dx*dx+dy*dy);
@@ -328,14 +319,13 @@ if(isMobile){
       }
       
       if(t.identifier===lookTouchId2&&lookPrev2&&typeof S!=='undefined'){
-        // Look rotation
         S.yaw-=(t.clientX-lookPrev2.x)*0.004;
         S.pitch-=(t.clientY-lookPrev2.y)*0.004;
         S.pitch=Math.max(-Math.PI/3,Math.min(Math.PI/3,S.pitch));
         lookPrev2={x:t.clientX,y:t.clientY};
       }
     }
-  },{passive:false});
+  },{passive:true});
 
   document.addEventListener('touchend',e=>{
     for(let i=0;i<e.changedTouches.length;i++){
