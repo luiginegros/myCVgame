@@ -524,7 +524,7 @@ function buildCastle(scene){
 }
 
 // ─── State ───
-const S={keys:{},yaw:Math.PI,pitch:0,activeMonument:null,monumentGroups:[],joystickActive:false,joystickDir:{x:0,y:0},touchStart:null,completionShown:false,castleUnlocked:false,castleDoorOpening:false,nexusSpawned:false,nexusGroup:null,nexusLabel:null,completeButtonShown:false};
+const S={keys:{},yaw:Math.PI,pitch:0,activeMonument:null,monumentGroups:[],joystickActive:false,joystickDir:{x:0,y:0},touchStart:null,completionShown:false,castleUnlocked:false,castleDoorOpening:false,nexusSpawned:false,nexusGroup:null,nexusLabel:null,completeButtonShown:false,castlePromptTime:null,nexusNearStart:null};
 let cardTimeout=null;
 
 function init(){
@@ -904,7 +904,9 @@ function init(){
     camera.position.z=Math.max(-70,Math.min(60,camera.position.z));
 
     // Hide castle prompt once player walks through the castle door
-    if(S.castleUnlocked&&S.nexusSpawned&&camera.position.z<-18&&Math.abs(camera.position.x)<5&&!S.completionShown){
+    // But keep it visible for at least 5 seconds after appearing
+    if(S.castleUnlocked&&!S.castlePromptTime) S.castlePromptTime=time;
+    if(S.castleUnlocked&&S.nexusSpawned&&(time-S.castlePromptTime)>5&&camera.position.z<-16&&!S.completionShown){
       document.getElementById('castle-prompt').classList.remove('show');
     }
 
@@ -956,22 +958,19 @@ function init(){
           showCard(AI_NEXUS);
           document.getElementById('castle-prompt').classList.remove('show');
         }
-        // Show the complete button after a short delay so user reads the card first
-        if(!S.completeButtonShown){
+        // Track time near nexus — show button after 3 seconds of proximity
+        if(!S.nexusNearStart) S.nexusNearStart=time;
+        if((time-S.nexusNearStart)>3&&!S.completeButtonShown){
           S.completeButtonShown=true;
-          setTimeout(()=>{
-            document.getElementById('complete-btn').classList.add('show');
-            if(document.pointerLockElement) document.exitPointerLock();
-          },2000);
+          document.getElementById('complete-btn').classList.add('show');
+          if(document.pointerLockElement) document.exitPointerLock();
         }
-      }
-      if(nexusDist>=10&&S.completeButtonShown&&!S.completionShown){
-        // Hide button if player walks away
-        S.completeButtonShown=false;
-        document.getElementById('complete-btn').classList.remove('show');
-      }
-      if(nexusDist>=10&&S.activeMonument===AI_NEXUS.id&&!S.completionShown){
-        S.activeMonument=null;hideCard();
+      }else{
+        // Reset proximity timer when walking away, but keep button if already shown
+        S.nexusNearStart=null;
+        if(S.activeMonument===AI_NEXUS.id&&!S.completionShown){
+          S.activeMonument=null;hideCard();
+        }
       }
     }
 
