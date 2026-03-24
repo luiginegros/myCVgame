@@ -1073,7 +1073,6 @@ function init(){
   } else {
     // Mobile: no pointer lock, show mobile controls hint, skip click prompt
     document.getElementById('controls-hint').textContent='Joystick to move · Swipe right side to look';
-    promptShown=true; // skip click prompt on mobile
   }
   if(!isMobile){
     renderer.domElement.addEventListener('touchstart',e=>{if(e.touches.length===1){const t=e.touches[0];if(t.clientX<window.innerWidth/2){S.joystickActive=true;S.touchStart={x:t.clientX,y:t.clientY};}else S.touchStart={x:t.clientX,y:t.clientY,isLook:true};}},{passive:false});
