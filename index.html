@@ -299,7 +299,17 @@ if(isMobile){
   },{passive:true});
 
   document.addEventListener('touchmove',e=>{
-    e.preventDefault();
+    // Check if any changed touch is on the info card — if so, let it scroll natively
+    let onCard=false;
+    for(let i=0;i<e.changedTouches.length;i++){
+      if(e.changedTouches[i].identifier!==moveTouchId&&e.changedTouches[i].identifier!==lookTouchId2){
+        // This touch isn't tracked as joystick or look — might be card scroll
+        const el=document.elementFromPoint(e.changedTouches[i].clientX,e.changedTouches[i].clientY);
+        if(el&&el.closest('#info-card')){onCard=true;}
+      }
+    }
+    if(!onCard) e.preventDefault();
+    
     for(let i=0;i<e.changedTouches.length;i++){
       const t=e.changedTouches[i];
       
